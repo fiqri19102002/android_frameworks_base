@@ -70,6 +70,7 @@ object WifiViewBinder {
         val signalSpacer = view.requireViewById<View>(R.id.wifi_signal_spacer)
         val networkSpeedView = view.requireViewById<ViewGroup>(R.id.network_speed)
         val networkSpeedSpacer = view.requireViewById<View>(R.id.network_speed_spacer)
+        val wifiStandardView = view.requireViewById<ImageView>(R.id.wifi_standard)
 
         view.isVisible = true
         iconView.isVisible = true
@@ -119,6 +120,7 @@ object WifiViewBinder {
                         iconView.imageTintList = tintList
                         activityInView.imageTintList = tintList
                         activityOutView.imageTintList = tintList
+                        wifiStandardView.imageTintList = tintList
                         dotView.setDecorColor(tint)
                     }
                 }
