@@ -221,7 +221,7 @@ constructor(
                     connect(
                         sharedR.id.bc_smartspace_view,
                         ConstraintSet.TOP,
-                        sharedR.id.date_smartspace_view,
+                        ClockViewIds.LOCKSCREEN_CLOCK_VIEW_SMALL,
                         ConstraintSet.BOTTOM,
                     )
                 }
