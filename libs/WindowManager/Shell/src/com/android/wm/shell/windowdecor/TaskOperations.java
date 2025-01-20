@@ -85,6 +85,7 @@ class TaskOperations {
             int taskId,
             boolean isLastTask,
             WindowContainerTransaction wct) {
+	wct.setAlwaysOnTop(taskToken, false);
         wct.reorder(taskToken, false);
         return mTransitionStarter.startMinimizedModeTransition(wct, taskId, isLastTask);
     }
