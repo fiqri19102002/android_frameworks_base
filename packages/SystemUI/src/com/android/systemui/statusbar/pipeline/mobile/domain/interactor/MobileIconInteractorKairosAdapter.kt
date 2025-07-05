@@ -50,6 +50,11 @@ fun BuildScope.MobileIconInteractorKairosAdapter(
             isSingleCarrier = isSingleCarrier.toStateFlow(),
             isRoaming = isRoaming.toStateFlow(),
             isForceHidden = isForceHidden.toColdConflatedFlow(kairosNetwork),
+	    isRoamingForceHidden = isRoamingForceHidden.toColdConflatedFlow(kairosNetwork),
+            isMobileHd = isMobileHd.toStateFlow(),
+            isMobileHdForceHidden = isMobileHdForceHidden.toColdConflatedFlow(kairosNetwork),
+            isVoWifi = isVoWifi.toStateFlow(),
+            isVoWifiForceHidden = isVoWifiForceHidden.toColdConflatedFlow(kairosNetwork),
             isAllowedDuringAirplaneMode = isAllowedDuringAirplaneMode.toStateFlow(),
             carrierNetworkChangeActive = carrierNetworkChangeActive.toStateFlow(),
         )
@@ -73,6 +78,11 @@ private class MobileIconInteractorKairosAdapter(
     override val isSingleCarrier: StateFlow<Boolean>,
     override val isRoaming: StateFlow<Boolean>,
     override val isForceHidden: Flow<Boolean>,
+    override val isRoamingForceHidden: Flow<Boolean>,
+    override val isMobileHd: StateFlow<Boolean>,
+    override val isMobileHdForceHidden: Flow<Boolean>,
+    override val isVoWifi: StateFlow<Boolean>,
+    override val isVoWifiForceHidden: Flow<Boolean>,
     override val isAllowedDuringAirplaneMode: StateFlow<Boolean>,
     override val carrierNetworkChangeActive: StateFlow<Boolean>,
 ) : MobileIconInteractor

@@ -352,6 +352,15 @@ class FullMobileConnectionRepository(
                 activeRepo.value.isAllowedDuringAirplaneMode.value,
             )
 
+    override val imsState =
+        activeRepo
+            .flatMapLatest { it.imsState }
+            .stateIn(
+                scope,
+                SharingStarted.WhileSubscribed(),
+                activeRepo.value.imsState.value,
+            )
+
     override val hasPrioritizedNetworkCapabilities =
         activeRepo
             .flatMapLatest { it.hasPrioritizedNetworkCapabilities }
@@ -362,15 +371,6 @@ class FullMobileConnectionRepository(
             )
 
     override suspend fun isInEcmMode(): Boolean = activeRepo.value.isInEcmMode()
-
-    override val imsState =
-        activeRepo
-            .flatMapLatest { it.imsState }
-            .stateIn(
-                scope,
-                SharingStarted.WhileSubscribed(),
-                activeRepo.value.imsState.value,
-            )
 
     fun dump(pw: PrintWriter) {
         val ipw = IndentingPrintWriter(pw, "  ")

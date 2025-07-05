@@ -16,12 +16,16 @@
  */
 package com.android.systemui.statusbar.pipeline.ims.data.repository
 
+import android.content.Context
+import android.database.ContentObserver
+import android.provider.Settings
 import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
 import com.android.systemui.common.coroutine.ConflatedCallbackFlow.conflatedCallbackFlow
 import com.android.systemui.dagger.SysUISingleton
 import com.android.systemui.dagger.qualifiers.Application
 import com.android.systemui.dagger.qualifiers.Background
+import com.android.systemui.statusbar.pipeline.ims.data.model.ImsIconModel
 import com.android.systemui.statusbar.pipeline.ims.data.model.ImsStateModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,6 +47,7 @@ import kotlinx.coroutines.withContext
 
 interface CommonImsRepository {
     val imsStates: StateFlow<List<ImsStateModel>>
+    val imsIconState: StateFlow<ImsIconModel>
     fun getRepoForSubId(subId: Int): ImsRepository
 }
 
@@ -55,6 +60,7 @@ constructor(
     @Background private val bgDispatcher: CoroutineDispatcher,
     @Application private val scope: CoroutineScope,
     private val imsRepoFactory: ImsRepositoryImpl.Factory,
+    private val context: Context,
 ): CommonImsRepository {
 
     private var subIdRepositoryCache: MutableMap<Int, ImsRepository> =
@@ -121,6 +127,64 @@ constructor(
             }
             .stateIn(scope, started = SharingStarted.WhileSubscribed(), listOf())
 
+    override val imsIconState: StateFlow<ImsIconModel> = conflatedCallbackFlow {
+        var showHdIcon = false
+        var showVowifiIcon = false
+        
+        // Read initial values from icon hide list
+        val hideList = getIconHideList()
+        showHdIcon = !hideList.contains(KEY_HD_ICON)
+        showVowifiIcon = !hideList.contains(KEY_VOWIFI_ICON)
+        
+        // Send initial state
+        trySend(
+            ImsIconModel(
+                showHdIcon = showHdIcon,
+                showVowifiIcon = showVowifiIcon
+            )
+        )
+
+        // Monitor for settings changes
+        val settingsObserver = object : ContentObserver(null) {
+            override fun onChange(selfChange: Boolean) {
+                super.onChange(selfChange)
+                val hideList = getIconHideList()
+                showHdIcon = !hideList.contains(KEY_HD_ICON)
+                showVowifiIcon = !hideList.contains(KEY_VOWIFI_ICON)
+                trySend(
+                    ImsIconModel(
+                        showHdIcon = showHdIcon,
+                        showVowifiIcon = showVowifiIcon
+                    )
+                )
+            }
+        }
+
+        // Register observer for icon hide list changes
+        context.contentResolver.registerContentObserver(
+            Settings.Secure.getUriFor(ICON_HIDE_LIST),
+            false,
+            settingsObserver
+        )
+
+        awaitClose { 
+            context.contentResolver.unregisterContentObserver(settingsObserver)
+        }
+    }.stateIn(
+        scope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = ImsIconModel()
+    )
+
+    private fun getIconHideList(): Set<String> {
+        val hideListStr = Settings.Secure.getString(context.contentResolver, ICON_HIDE_LIST)
+        return if (hideListStr.isNullOrEmpty()) {
+            emptySet()
+        } else {
+            hideListStr.split(",").toSet()
+        }
+    }
+
     override fun getRepoForSubId(subId: Int): ImsRepository =
         getOrCreateRepoForSubId(subId)
 
@@ -130,5 +194,11 @@ constructor(
 
     private fun createRepositoryForSubId(subId: Int): ImsRepository {
         return imsRepoFactory.build(subId)
+    }
+
+    private companion object {
+        const val ICON_HIDE_LIST = "icon_blacklist"
+        const val KEY_HD_ICON = "hd_calling"
+        const val KEY_VOWIFI_ICON = "vowifi"
     }
 }

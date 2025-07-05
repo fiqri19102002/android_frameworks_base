@@ -15,9 +15,9 @@
  */
 package com.android.systemui.statusbar.pipeline.ims.data.model
 
-import android.telephony.ims.stub.ImsRegistrationImplBase.REGISTRATION_TECH_NONE
-import android.telephony.ims.stub.ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN
 import android.telephony.ims.feature.MmTelFeature
+import android.telephony.ims.stub.ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN
+import android.telephony.ims.stub.ImsRegistrationImplBase.REGISTRATION_TECH_NONE
 
 data class ImsStateModel(
     val subId: Int = -1,

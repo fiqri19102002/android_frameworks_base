@@ -439,6 +439,8 @@ class MobileConnectionRepositoryImpl(
     /** Typical mobile connections aren't available during airplane mode. */
     override val isAllowedDuringAirplaneMode = MutableStateFlow(false).asStateFlow()
 
+    override val imsState: StateFlow<ImsStateModel> = imsRepo.imsState
+
     /**
      * Currently, a network with NET_CAPABILITY_PRIORITIZE_LATENCY is the only type of network that
      * we consider to be a "network slice". _PRIORITIZE_BANDWIDTH may be added in the future. Any of
@@ -476,8 +478,6 @@ class MobileConnectionRepositoryImpl(
             }
             .flowOn(bgDispatcher)
             .stateIn(scope, SharingStarted.WhileSubscribed(), false)
-
-    override val imsState: StateFlow<ImsStateModel> = imsRepo.imsState
 
     class Factory
     @Inject

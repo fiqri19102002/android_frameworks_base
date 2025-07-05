@@ -31,6 +31,7 @@ import com.android.systemui.log.table.logDiffsForTable
 import com.android.systemui.statusbar.core.NewStatusBarIcons
 import com.android.systemui.statusbar.core.StatusBarRootModernization
 import com.android.systemui.statusbar.pipeline.dagger.MobileSummaryLog
+import com.android.systemui.statusbar.pipeline.ims.data.repository.CommonImsRepository
 import com.android.systemui.statusbar.pipeline.mobile.data.model.SubscriptionModel
 import com.android.systemui.statusbar.pipeline.mobile.data.repository.MobileConnectionRepository
 import com.android.systemui.statusbar.pipeline.mobile.data.repository.MobileConnectionsRepository
@@ -160,6 +161,7 @@ constructor(
     connectivityRepository: ConnectivityRepository,
     userSetupRepo: UserSetupRepository,
     @Background private val scope: CoroutineScope,
+    commonImsRepo: CommonImsRepository,
     private val context: Context,
     private val featureFlagsClassic: FeatureFlagsClassic,
 ) : MobileIconsInteractor {
@@ -436,14 +438,14 @@ constructor(
             .stateIn(scope, SharingStarted.WhileSubscribed(), false)
 
     override val isMobileHdForceHidden: Flow<Boolean> =
-        connectivityRepository.forceHiddenSlots
-            .map { it.contains(ConnectivitySlot.HD_CALLING) }
-            .stateIn(scope, SharingStarted.WhileSubscribed(), false)
+        commonImsRepo.imsIconState
+            .map { !it.showHdIcon }
+            .stateIn(scope, SharingStarted.WhileSubscribed(), true)
 
     override val isVoWifiForceHidden: Flow<Boolean> =
-        connectivityRepository.forceHiddenSlots
-            .map { it.contains(ConnectivitySlot.VOWIFI) }
-            .stateIn(scope, SharingStarted.WhileSubscribed(), false)
+        commonImsRepo.imsIconState
+            .map { !it.showVowifiIcon }
+            .stateIn(scope, SharingStarted.WhileSubscribed(), true)
 
     override val isDeviceInEmergencyCallsOnlyMode: Flow<Boolean> =
         mobileConnectionsRepo.isDeviceEmergencyCallCapable

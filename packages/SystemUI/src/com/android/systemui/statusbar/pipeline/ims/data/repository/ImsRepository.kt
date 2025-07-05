@@ -19,16 +19,15 @@ import android.telephony.SubscriptionManager
 import android.telephony.ims.ImsException
 import android.telephony.ims.ImsManager
 import android.telephony.ims.ImsMmTelManager
-import android.telephony.ims.ImsStateCallback
 import android.telephony.ims.ImsReasonInfo
 import android.telephony.ims.ImsRegistrationAttributes
+import android.telephony.ims.ImsStateCallback
 import android.telephony.ims.RegistrationManager.RegistrationCallback
 import android.telephony.ims.feature.MmTelFeature
 import android.telephony.ims.stub.ImsRegistrationImplBase.REGISTRATION_TECH_NONE
 import com.android.systemui.dagger.qualifiers.Application
 import com.android.systemui.dagger.qualifiers.Background
 import com.android.systemui.statusbar.pipeline.ims.data.model.ImsStateModel
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,6 +42,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
 interface ImsRepository {
     val subId: Int
@@ -56,67 +56,67 @@ class ImsRepositoryImpl(
     subscriptionManager: SubscriptionManager,
     bgDispatcher: CoroutineDispatcher,
     scope: CoroutineScope,
-): ImsRepository {
+) : ImsRepository {
 
     private val imsCallback: StateFlow<ImsCallbackState> = run {
         val initial = ImsCallbackState()
         val imsMmTelManager = imsManager.getImsMmTelManager(subId)
         callbackFlow {
-                val registrationCallback = object: RegistrationCallback() {
-                    override fun onRegistered(attributes: ImsRegistrationAttributes) {
-                        trySend(CallbackEvent.OnImsRegistrationChanged(true, attributes))
-                    }
-
-                    override fun onUnregistered(info: ImsReasonInfo) {
-                        trySend(CallbackEvent.OnImsRegistrationChanged(false, null))
-                    }
+            val registrationCallback = object : RegistrationCallback() {
+                override fun onRegistered(attributes: ImsRegistrationAttributes) {
+                    trySend(CallbackEvent.OnImsRegistrationChanged(true, attributes))
                 }
-                val capabilityCallback = object: ImsMmTelManager.CapabilityCallback() {
-                    override fun onCapabilitiesStatusChanged(
-                        capabilities: MmTelFeature.MmTelCapabilities
-                    ) {
-                        trySend(CallbackEvent.OnImsCapabilitiesStatusChanged(capabilities))
-                    }
-                }
-                val stateCallback = object: ImsStateCallback() {
-                    override fun onAvailable() {
-                        imsMmTelManager.registerImsRegistrationCallback(
-                                bgDispatcher.asExecutor(), registrationCallback
-                        )
-                        imsMmTelManager.registerMmTelCapabilityCallback(
-                                bgDispatcher.asExecutor(), capabilityCallback
-                        )
-                    }
 
-                    override fun onUnavailable(reason: Int) {
-                        imsMmTelManager.unregisterImsRegistrationCallback(registrationCallback)
-                        imsMmTelManager.unregisterMmTelCapabilityCallback(capabilityCallback)
-                    }
-
-                    override fun onError() {
-                        imsMmTelManager.unregisterImsRegistrationCallback(registrationCallback)
-                        imsMmTelManager.unregisterMmTelCapabilityCallback(capabilityCallback)
-                    }
+                override fun onUnregistered(info: ImsReasonInfo) {
+                    trySend(CallbackEvent.OnImsRegistrationChanged(false, null))
                 }
-                imsMmTelManager.registerImsStateCallback(
-                        bgDispatcher.asExecutor(), stateCallback
-                )
-                awaitClose {
-                    imsMmTelManager.unregisterImsStateCallback(stateCallback)
+            }
+            val capabilityCallback = object : ImsMmTelManager.CapabilityCallback() {
+                override fun onCapabilitiesStatusChanged(
+                    capabilities: MmTelFeature.MmTelCapabilities
+                ) {
+                    trySend(CallbackEvent.OnImsCapabilitiesStatusChanged(capabilities))
+                }
+            }
+            val stateCallback = object : ImsStateCallback() {
+                override fun onAvailable() {
+                    imsMmTelManager.registerImsRegistrationCallback(
+                        bgDispatcher.asExecutor(), registrationCallback
+                    )
+                    imsMmTelManager.registerMmTelCapabilityCallback(
+                        bgDispatcher.asExecutor(), capabilityCallback
+                    )
+                }
+
+                override fun onUnavailable(reason: Int) {
                     imsMmTelManager.unregisterImsRegistrationCallback(registrationCallback)
                     imsMmTelManager.unregisterMmTelCapabilityCallback(capabilityCallback)
                 }
+
+                override fun onError() {
+                    imsMmTelManager.unregisterImsRegistrationCallback(registrationCallback)
+                    imsMmTelManager.unregisterMmTelCapabilityCallback(capabilityCallback)
+                }
+            }
+            imsMmTelManager.registerImsStateCallback(
+                bgDispatcher.asExecutor(), stateCallback
+            )
+            awaitClose {
+                imsMmTelManager.unregisterImsStateCallback(stateCallback)
+                imsMmTelManager.unregisterImsRegistrationCallback(registrationCallback)
+                imsMmTelManager.unregisterMmTelCapabilityCallback(capabilityCallback)
+            }
         }
-        .retryWhen { cause, _ ->
-            // Retry the flow with 1 second delay
-            // only if service not available.
-            // This state is temporary and service may be available after sometime.
-            delay(1000)
-            cause is ImsException && cause.code == ImsException.CODE_ERROR_SERVICE_UNAVAILABLE
-        }
-        .catch { /* Nothing */ }
-        .scan(initial = initial) { state, event -> state.applyEvent(event) }
-        .stateIn(scope = scope, started = SharingStarted.WhileSubscribed(), initial)
+            .retryWhen { cause, _ ->
+                // Retry the flow with 1 second delay
+                // only if service not available.
+                // This state is temporary and service may be available after sometime.
+                delay(1000)
+                cause is ImsException && cause.code == ImsException.CODE_ERROR_SERVICE_UNAVAILABLE
+            }
+            .catch { /* Nothing */ }
+            .scan(initial = initial) { state, event -> state.applyEvent(event) }
+            .stateIn(scope = scope, started = SharingStarted.WhileSubscribed(), initial)
     }
 
     override val imsState: StateFlow<ImsStateModel> =
@@ -126,18 +126,17 @@ class ImsRepositoryImpl(
                 val capabilitiesChanged = callbackState.onImsCapabilitiesStatusChanged
                 val registered = registrationChanged?.registered ?: false
                 val capabilities = capabilitiesChanged?.capabilities
-                val registrationTech = registrationChanged
-                        ?.attributes
-                        ?.registrationTechnology ?: REGISTRATION_TECH_NONE
+                val registrationTech = registrationChanged?.attributes?.registrationTechnology
+                    ?: REGISTRATION_TECH_NONE
                 ImsStateModel(
                     subId = subId,
                     slotIndex = SubscriptionManager.getSlotIndex(subId),
-                    activeSubCount = subscriptionManager.getActiveSubscriptionInfoCount(),
+                    activeSubCount = subscriptionManager.activeSubscriptionInfoCount,
                     registered = registered,
                     capabilities = capabilities,
                     registrationTech = registrationTech
                 )
-             }
+            }
             .catch { emit(ImsStateModel()) /* on exception, just return default value */ }
             .stateIn(scope, SharingStarted.WhileSubscribed(), ImsStateModel())
 
@@ -162,8 +161,14 @@ class ImsRepositoryImpl(
 }
 
 sealed interface CallbackEvent {
-    data class OnImsRegistrationChanged(val registered: Boolean, val attributes: ImsRegistrationAttributes?): CallbackEvent
-    data class OnImsCapabilitiesStatusChanged(val capabilities: MmTelFeature.MmTelCapabilities): CallbackEvent
+    data class OnImsRegistrationChanged(
+        val registered: Boolean,
+        val attributes: ImsRegistrationAttributes?
+    ) : CallbackEvent
+
+    data class OnImsCapabilitiesStatusChanged(
+        val capabilities: MmTelFeature.MmTelCapabilities
+    ) : CallbackEvent
 }
 
 data class ImsCallbackState(
@@ -171,7 +176,7 @@ data class ImsCallbackState(
     val onImsCapabilitiesStatusChanged: CallbackEvent.OnImsCapabilitiesStatusChanged? = null
 ) {
     fun applyEvent(event: CallbackEvent): ImsCallbackState {
-        return when(event) {
+        return when (event) {
             is CallbackEvent.OnImsRegistrationChanged -> copy(onImsRegistrationChanged = event)
             is CallbackEvent.OnImsCapabilitiesStatusChanged -> copy(onImsCapabilitiesStatusChanged = event)
         }

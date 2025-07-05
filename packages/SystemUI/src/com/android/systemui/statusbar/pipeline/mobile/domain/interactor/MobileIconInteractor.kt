@@ -133,13 +133,13 @@ interface MobileIconInteractor {
     val carrierNetworkChangeActive: Flow<Boolean>
 
     /** True when VoLTE/VONR available */
-    val isMobileHd: StateFlow<Boolean>
+    val isMobileHd: Flow<Boolean>
 
     /** See [MobileIconsInteractor.isMobileHdForceHidden]. */
     val isMobileHdForceHidden: Flow<Boolean>
 
     /** True when VoWifi available */
-    val isVoWifi: StateFlow<Boolean>
+    val isVoWifi: Flow<Boolean>
 
     /** See [MobileIconsInteractor.isVoWifiForceHidden]. */
     val isVoWifiForceHidden: Flow<Boolean>
@@ -340,6 +340,15 @@ class MobileIconInteractorImpl(
             }
             .stateIn(scope, SharingStarted.WhileSubscribed(), 0)
 
+    private val showRoaming: StateFlow<Boolean> =
+        combine(
+                isRoaming,
+                isRoamingForceHidden
+        ) { roaming, roamingForceHidden ->
+            roaming && !roamingForceHidden
+        }
+        .stateIn(scope, SharingStarted.WhileSubscribed(), false)
+
     // Satellite level is unaffected by the inflateSignalStrength property
     // See b/346904529 for details
     private val satelliteShownLevel: StateFlow<Int> =
@@ -349,15 +358,6 @@ class MobileIconInteractorImpl(
                 combine(level, isInService) { level, isInService -> if (isInService) level else 0 }
             }
             .stateIn(scope, SharingStarted.WhileSubscribed(), 0)
-
-    private val showRoaming: StateFlow<Boolean> =
-        combine(
-                isRoaming,
-                isRoamingForceHidden
-        ) { roaming, roamingForceHidden ->
-            roaming && !roamingForceHidden
-        }
-        .stateIn(scope, SharingStarted.WhileSubscribed(), false)
 
     private val cellularIcon: Flow<SignalIconModel.Cellular> =
         combine(
