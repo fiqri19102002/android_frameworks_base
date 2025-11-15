@@ -41,7 +41,7 @@ interface SmartspaceViewComponent {
             @BindsInstance parent: ViewGroup,
             @BindsInstance @Named(PLUGIN) plugin: BcSmartspaceDataPlugin,
             @BindsInstance onAttachListener: View.OnAttachStateChangeListener,
-            @BindsInstance viewWithCustomLayout: View? = null,
+            @BindsInstance viewWithCustomLayout: View? = null
         ): SmartspaceViewComponent
     }
 
@@ -53,58 +53,50 @@ interface SmartspaceViewComponent {
 
         @Provides
         fun providesSmartspaceView(
-            activityStarter: ActivityStarter,
-            falsingManager: FalsingManager,
-            parent: ViewGroup,
-            @Named(PLUGIN) plugin: BcSmartspaceDataPlugin,
-            viewWithCustomLayout: View?,
-            onAttachListener: View.OnAttachStateChangeListener,
-            @Background bgHandler: Handler,
+                activityStarter: ActivityStarter,
+                falsingManager: FalsingManager,
+                parent: ViewGroup,
+                @Named(PLUGIN) plugin: BcSmartspaceDataPlugin,
+                viewWithCustomLayout: View?,
+                onAttachListener: View.OnAttachStateChangeListener,
+                @Background bgHandler: Handler,
         ): BcSmartspaceDataPlugin.SmartspaceView {
-            val ssView =
-                viewWithCustomLayout as? BcSmartspaceDataPlugin.SmartspaceView
+            val ssView = viewWithCustomLayout
+                    as? BcSmartspaceDataPlugin.SmartspaceView
                     ?: plugin.getView(parent)
             // Currently, this is only used to provide SmartspaceView on Dream surface.
             ssView.setUiSurface(UI_SURFACE_DREAM)
             ssView.setBgHandler(bgHandler)
-            plugin.setIntentStarter(
-                object : BcSmartspaceDataPlugin.IntentStarter {
-                    override fun startIntent(
-                        view: View,
-                        intent: Intent,
-                        showOnLockscreen: Boolean,
-                    ) {
-                        activityStarter.startActivity(
+            ssView.registerDataProvider(plugin)
+
+            ssView.setIntentStarter(object : BcSmartspaceDataPlugin.IntentStarter {
+                override fun startIntent(view: View, intent: Intent, showOnLockscreen: Boolean) {
+                    activityStarter.startActivity(
                             intent,
                             true, /* dismissShade */
                             null, /* launch animator */
-                            showOnLockscreen,
-                        )
-                    }
+                            showOnLockscreen
+                    )
+                }
 
-                    override fun startPendingIntent(
+                override fun startPendingIntent(
                         view: View,
                         pi: PendingIntent,
-                        showOnLockscreen: Boolean,
-                    ) {
-                        if (showOnLockscreen) {
-                            val options =
-                                ActivityOptions.makeBasic()
-                                    .setPendingIntentBackgroundActivityStartMode(
-                                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                                    )
-                                    .toBundle()
-                            pi.send(options)
-                        } else {
-                            activityStarter.startPendingIntentDismissingKeyguard(pi)
-                        }
+                        showOnLockscreen: Boolean
+                ) {
+                    if (showOnLockscreen) {
+                        val options = ActivityOptions.makeBasic()
+                                .setPendingIntentBackgroundActivityStartMode(
+                                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                                .toBundle()
+                        pi.send(options)
+                    } else {
+                        activityStarter.startPendingIntentDismissingKeyguard(pi)
                     }
                 }
-            )
-
-            ssView.registerDataProvider(plugin)
-            ssView.setFalsingManager(falsingManager)
+            })
             (ssView as View).addOnAttachStateChangeListener(onAttachListener)
+            ssView.setFalsingManager(falsingManager)
             return ssView
         }
     }

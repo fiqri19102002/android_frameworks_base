@@ -402,7 +402,9 @@ constructor(
         ssView.setBgHandler(bgHandler)
         ssView.setUiSurface(BcSmartspaceDataPlugin.UI_SURFACE_LOCK_SCREEN_AOD)
         ssView.setTimeChangedDelegate(SmartspaceTimeChangedDelegate(keyguardUpdateMonitor))
-        plugin.setIntentStarter(
+        ssView.registerDataProvider(plugin)
+
+        ssView.setIntentStarter(
             object : BcSmartspaceDataPlugin.IntentStarter {
                 override fun startIntent(view: View, intent: Intent, showOnLockscreen: Boolean) {
                     if (showOnLockscreen) {
@@ -437,8 +439,6 @@ constructor(
                 }
             }
         )
-
-        ssView.registerDataProvider(plugin)
         ssView.setFalsingManager(falsingManager)
         ssView.setKeyguardBypassEnabled(bypassController.bypassEnabled)
         return (ssView as View).apply {
@@ -507,9 +507,9 @@ constructor(
         statusBarStateController.addCallback(statusBarStateListener)
         bypassController.registerOnBypassStateChangedListener(bypassStateChangedListener)
 
-        datePlugin?.setEventDispatcher { e -> session?.notifySmartspaceEvent(e) }
-        weatherPlugin?.setEventDispatcher { e -> session?.notifySmartspaceEvent(e) }
-        plugin?.setEventDispatcher { e -> session?.notifySmartspaceEvent(e) }
+        datePlugin?.registerSmartspaceEventNotifier { e -> session?.notifySmartspaceEvent(e) }
+        weatherPlugin?.registerSmartspaceEventNotifier { e -> session?.notifySmartspaceEvent(e) }
+        plugin?.registerSmartspaceEventNotifier { e -> session?.notifySmartspaceEvent(e) }
 
         updateBypassEnabled()
         reloadSmartspace()
@@ -547,12 +547,12 @@ constructor(
         bypassController.unregisterOnBypassStateChangedListener(bypassStateChangedListener)
         session = null
 
-        datePlugin?.setEventDispatcher(null)
+        datePlugin?.registerSmartspaceEventNotifier(null)
 
-        weatherPlugin?.setEventDispatcher(null)
+        weatherPlugin?.registerSmartspaceEventNotifier(null)
         weatherPlugin?.onTargetsAvailable(emptyList())
 
-        plugin?.setEventDispatcher(null)
+        plugin?.registerSmartspaceEventNotifier(null)
         plugin?.onTargetsAvailable(emptyList())
 
         Log.d(TAG, "Ended smartspace session for lockscreen")

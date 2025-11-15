@@ -115,6 +115,8 @@ class DreamSmartspaceControllerTest : SysuiTestCase() {
 
         override fun setDozeAmount(amount: Float) {}
 
+        override fun setIntentStarter(intentStarter: BcSmartspaceDataPlugin.IntentStarter?) {}
+
         override fun setFalsingManager(falsingManager: FalsingManager?) {}
 
         override fun setDnd(image: Drawable?, description: String?) {}
@@ -297,6 +299,6 @@ class DreamSmartspaceControllerTest : SysuiTestCase() {
 
         // And the listener receives an empty list of targets and unregisters the notifier
         verify(weatherPlugin).onTargetsAvailable(emptyList())
-        verify(weatherPlugin).setEventDispatcher(null)
+        verify(weatherPlugin).registerSmartspaceEventNotifier(null)
     }
 }

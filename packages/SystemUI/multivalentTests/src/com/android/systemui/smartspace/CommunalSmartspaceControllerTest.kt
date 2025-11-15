@@ -94,6 +94,8 @@ class CommunalSmartspaceControllerTest : SysuiTestCase() {
 
         override fun setDozeAmount(amount: Float) {}
 
+        override fun setIntentStarter(intentStarter: BcSmartspaceDataPlugin.IntentStarter?) {}
+
         override fun setFalsingManager(falsingManager: FalsingManager?) {}
 
         override fun setDnd(image: Drawable?, description: String?) {}
@@ -198,6 +200,6 @@ class CommunalSmartspaceControllerTest : SysuiTestCase() {
 
         // And the listener receives an empty list of targets and unregisters the notifier
         verify(plugin).onTargetsAvailable(emptyList())
-        verify(plugin).setEventDispatcher(null)
+        verify(plugin).registerSmartspaceEventNotifier(null)
     }
 }
