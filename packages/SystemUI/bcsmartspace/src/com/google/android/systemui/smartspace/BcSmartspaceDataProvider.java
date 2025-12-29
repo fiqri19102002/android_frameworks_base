@@ -20,7 +20,10 @@ public final class BcSmartspaceDataProvider implements BcSmartspaceDataPlugin {
     public final ArrayList<SmartspaceTarget> mSmartspaceTargets = new ArrayList<>();
     public HashSet<View> mViews = new HashSet<>();
     public HashSet<View.OnAttachStateChangeListener> mAttachListeners = new HashSet<>();
-    public BcSmartspaceDataPlugin.SmartspaceEventNotifier mEventNotifier = null;
+
+    private BcSmartspaceDataPlugin.SmartspaceEventDispatcher mEventDispatcher;
+    private BcSmartspaceDataPlugin.IntentStarter mIntentStarter;
+
     public View.OnAttachStateChangeListener mStateChangeListener = new View.OnAttachStateChangeListener() { // from class: com.google.android.systemui.smartspace.BcSmartspaceDataProvider.1
         @Override // android.view.View.OnAttachStateChangeListener
         public void onViewAttachedToWindow(View view) {
@@ -49,14 +52,31 @@ public final class BcSmartspaceDataProvider implements BcSmartspaceDataPlugin {
         this.mSmartspaceTargetListeners.remove(listener);
     }
 
-    public void registerSmartspaceEventNotifier(BcSmartspaceDataPlugin.SmartspaceEventNotifier notifier) {
-        this.mEventNotifier = notifier;
+    @Override
+    public void setEventDispatcher(BcSmartspaceDataPlugin.SmartspaceEventDispatcher dispatcher) {
+        this.mEventDispatcher = dispatcher;
     }
 
-    public void notifySmartspaceEvent(SmartspaceTargetEvent event) {
-        if (this.mEventNotifier != null) {
-            this.mEventNotifier.notifySmartspaceEvent(event);
-        }
+    @Override
+    public void setIntentStarter(BcSmartspaceDataPlugin.IntentStarter intentStarter) {
+        this.mIntentStarter = intentStarter;
+    }
+
+    @Override
+    public SmartspaceEventNotifier getEventNotifier() {
+        return new SmartspaceEventNotifier() {
+            @Override
+            public void notifySmartspaceEvent(SmartspaceTargetEvent event) {
+                if (mEventDispatcher != null) {
+                    mEventDispatcher.notifySmartspaceEvent(event);
+                }
+            }
+
+            @Override
+            public IntentStarter getIntentStarter() {
+                return mIntentStarter;
+            }
+        };
     }
 
     public BcSmartspaceDataPlugin.SmartspaceView getView(ViewGroup parent) {

@@ -59,6 +59,8 @@ public class CardPagerAdapter extends PagerAdapter {
     public boolean mKeyguardBypassEnabled = false;
     public boolean mHasDifferentTargets = false;
 
+    private BcSmartspaceDataPlugin.SmartspaceEventNotifier mEventNotifier;
+
     List<SmartspaceTarget> getTargets() {
         return this.mSmartspaceTargets;
     }
@@ -354,9 +356,7 @@ public class CardPagerAdapter extends PagerAdapter {
             if (this.mDataProvider == null) {
                 eventNotifier = null;
             } else {
-                eventNotifier = smartspaceTargetEvent -> {
-                    this.mDataProvider.notifySmartspaceEvent(smartspaceTargetEvent);
-                };
+                eventNotifier = this.mEventNotifier;
             }
             BcNextAlarmData bcNextAlarmData2 = this.mNextAlarmData;
             if (!smartspaceTarget.getSmartspaceTargetId().equals(baseTemplateCard.mPrevSmartspaceTargetId)) {
@@ -521,9 +521,7 @@ public class CardPagerAdapter extends PagerAdapter {
         if (this.mDataProvider == null) {
             smartspaceEventNotifier = null;
         } else {
-            smartspaceEventNotifier = smartspaceTargetEvent2 -> {
-                this.mDataProvider.notifySmartspaceEvent(smartspaceTargetEvent2);
-            };
+            smartspaceEventNotifier = this.mEventNotifier;
         }
         String smartspaceTargetId2 = smartspaceTarget.getSmartspaceTargetId();
         if (!bcSmartspaceCard.mPrevSmartspaceTargetId.equals(smartspaceTargetId2)) {
@@ -696,6 +694,7 @@ public class CardPagerAdapter extends PagerAdapter {
 
     public void setDataProvider(BcSmartspaceDataPlugin plugin) {
         this.mDataProvider = plugin;
+        this.mEventNotifier = plugin != null ? plugin.getEventNotifier() : null;
     }
 
     public void setPrimaryTextColor(int i) {

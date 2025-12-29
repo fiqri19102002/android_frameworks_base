@@ -59,6 +59,8 @@ public class BcSmartspaceView extends FrameLayout implements BcSmartspaceDataPlu
     public int mScrollState;
     public ViewPager mViewPager;
 
+    private BcSmartspaceDataPlugin.SmartspaceEventNotifier mEventNotifier;
+
     public BcSmartspaceView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         this.mLastReceivedTargets = new ArraySet<>();
@@ -106,7 +108,9 @@ public class BcSmartspaceView extends FrameLayout implements BcSmartspaceDataPlu
                     if (baseAction != null) {
                         builder.setSmartspaceActionId(baseAction.getId());
                     }
-                    BcSmartspaceView.this.mDataProvider.notifySmartspaceEvent(builder.build());
+                    if (mEventNotifier != null) {
+                        mEventNotifier.notifySmartspaceEvent(builder.build());
+                    }
                 }
                 SmartspaceTargetEvent.Builder builder2 = new SmartspaceTargetEvent.Builder(2);
                 builder2.setSmartspaceTarget(targetAtPosition2);
@@ -114,7 +118,9 @@ public class BcSmartspaceView extends FrameLayout implements BcSmartspaceDataPlu
                 if (baseAction2 != null) {
                     builder2.setSmartspaceActionId(baseAction2.getId());
                 }
-                BcSmartspaceView.this.mDataProvider.notifySmartspaceEvent(builder2.build());
+                if (mEventNotifier != null) {
+                    mEventNotifier.notifySmartspaceEvent(builder2.build());
+                }
             }
         };
     }
@@ -122,8 +128,8 @@ public class BcSmartspaceView extends FrameLayout implements BcSmartspaceDataPlu
     @Override // android.view.View
     public void onVisibilityAggregated(boolean isVisible) {
         super.onVisibilityAggregated(isVisible);
-        if (this.mDataProvider != null) {
-            this.mDataProvider.notifySmartspaceEvent(new SmartspaceTargetEvent.Builder(isVisible ? 6 : 7).build());
+        if (mEventNotifier != null) {
+            mEventNotifier.notifySmartspaceEvent(new SmartspaceTargetEvent.Builder(isVisible ? 6 : 7).build());
         }
     }
 
@@ -181,6 +187,7 @@ public class BcSmartspaceView extends FrameLayout implements BcSmartspaceDataPlu
 
     public void registerDataProvider(BcSmartspaceDataPlugin plugin) {
         this.mDataProvider = plugin;
+        this.mEventNotifier = plugin.getEventNotifier();
         plugin.registerListener(this);
         this.mAdapter.setDataProvider(this.mDataProvider);
     }
@@ -279,7 +286,9 @@ public class BcSmartspaceView extends FrameLayout implements BcSmartspaceDataPlu
                 if (baseAction != null) {
                     builder.setSmartspaceActionId(baseAction.getId());
                 }
-                this.mDataProvider.notifySmartspaceEvent(builder.build());
+                if (mEventNotifier != null) {
+                    mEventNotifier.notifySmartspaceEvent(builder.build());
+                }
             }
         }
         this.mLastReceivedTargets.clear();
