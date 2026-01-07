@@ -1,6 +1,5 @@
 package com.google.android.systemui.smartspace;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,9 +55,9 @@ public final class DateSmartspaceDataProvider implements BcSmartspaceDataPlugin 
     }
 
     @Override
-    public final BcSmartspaceDataPlugin.SmartspaceView getLargeClockView(Context context) {
+    public final BcSmartspaceDataPlugin.SmartspaceView getLargeClockView(ViewGroup parent) {
         View view =
-                LayoutInflater.from(context)
+                LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.date_plus_extras_large, (ViewGroup) null, false);
         view.setId(R.id.date_smartspace_view_large);
         view.addOnAttachStateChangeListener(this.mStateChangeListener);
@@ -66,9 +65,9 @@ public final class DateSmartspaceDataProvider implements BcSmartspaceDataPlugin 
     }
 
     @Override
-    public final BcSmartspaceDataPlugin.SmartspaceView getView(Context context) {
+    public final BcSmartspaceDataPlugin.SmartspaceView getView(ViewGroup parent) {
         View view =
-                LayoutInflater.from(context)
+                LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.date_plus_extras, (ViewGroup) null, false);
         view.addOnAttachStateChangeListener(this.mStateChangeListener);
         return (BcSmartspaceDataPlugin.SmartspaceView) view;

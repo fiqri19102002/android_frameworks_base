@@ -1,11 +1,11 @@
 package com.google.android.systemui.smartspace;
 
 import android.app.smartspace.SmartspaceTarget;
-import android.content.Context;
 import android.os.Debug;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.android.systemui.plugins.BcSmartspaceConfigPlugin;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
@@ -66,13 +66,13 @@ public final class BcSmartspaceDataProvider implements BcSmartspaceDataPlugin {
     }
 
     @Override
-    public BcSmartspaceDataPlugin.SmartspaceView getView(Context context) {
+    public BcSmartspaceDataPlugin.SmartspaceView getView(ViewGroup parent) {
         int layoutId =
                 mConfigProvider.isViewPager2Enabled()
                         ? R.layout.smartspace_enhanced2
                         : R.layout.smartspace_enhanced;
 
-        View view = LayoutInflater.from(context).inflate(layoutId, null, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(layoutId, null, false);
         view.addOnAttachStateChangeListener(mStateChangeListener);
         return (BcSmartspaceDataPlugin.SmartspaceView) view;
     }
