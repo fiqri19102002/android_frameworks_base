@@ -124,6 +124,14 @@ public class DateSmartspaceView extends LinearLayout
         mDateView = findViewById(R.id.date);
         mNextAlarmTextView = findViewById(R.id.alarm_text_view);
         mDndImageView = findViewById(R.id.dnd_icon);
+        
+        if (mDndImageView != null) {
+            int iconSize = getContext().getResources().getDimensionPixelSize(
+                R.dimen.enhanced_smartspace_icon_size);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                iconSize, iconSize);
+            mDndImageView.setLayoutParams(params);
+        }
     }
 
     @Override
@@ -142,9 +150,20 @@ public class DateSmartspaceView extends LinearLayout
         if (image == null) {
             BcSmartspaceTemplateDataUtils.updateVisibility(mDndImageView, View.GONE);
         } else {
-            mDndIconDrawable.setIcon(image.mutate());
+            int iconSize = getContext().getResources().getDimensionPixelSize(
+                R.dimen.enhanced_smartspace_icon_size);
+            
+            Drawable freshIcon = image.getConstantState().newDrawable().mutate();
+            freshIcon.setBounds(0, 0, iconSize, iconSize);
+            
+            mDndIconDrawable.setIcon(freshIcon);
+            mDndIconDrawable.setBounds(0, 0, iconSize, iconSize);
+            
             mDndImageView.setImageDrawable(mDndIconDrawable);
             mDndImageView.setContentDescription(description);
+            
+            mDndImageView.requestLayout();
+            
             BcSmartspaceTemplateDataUtils.updateVisibility(mDndImageView, View.VISIBLE);
         }
         updateColorForExtras();
