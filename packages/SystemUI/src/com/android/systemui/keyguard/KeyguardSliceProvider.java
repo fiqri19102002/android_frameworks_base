@@ -222,7 +222,7 @@ public class KeyguardSliceProvider extends SliceProvider implements
                 if (needsMediaLocked()) {
                     addMediaLocked(builder);
                 } else {
-                    addDateLocked(builder);
+                    builder.addRow(new RowBuilder(mDateUri).setTitle(mLastText));
                 }
                 addNextAlarmLocked(builder);
                 addZenModeLocked(builder);
@@ -235,10 +235,6 @@ public class KeyguardSliceProvider extends SliceProvider implements
             Trace.endSection();
         }
         return slice;
-    }
-
-    protected void addDateLocked(ListBuilder builder) {
-        builder.addRow(new RowBuilder(mDateUri).setTitle(mLastText));
     }
 
     protected boolean needsMediaLocked() {
