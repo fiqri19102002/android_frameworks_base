@@ -57,7 +57,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * View visible under the clock on the lock screen and AoD.
@@ -132,18 +131,6 @@ public class KeyguardSliceView extends LinearLayout {
         }
     }
 
-    private LinearLayout createSubRow() {
-        LinearLayout layout = new LinearLayout(mContext);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                (LinearLayout.LayoutParams) mRow.getLayoutParams());
-        lp.setMarginEnd(mContext.getResources().getDimensionPixelSize(
-                R.dimen.widget_horizontal_padding));
-        layout.setLayoutParams(lp);
-        layout.setOrientation(LinearLayout.HORIZONTAL);
-        layout.setVisibility(View.VISIBLE);
-        return layout;
-    }
-
     Map<View, PendingIntent> showSlice(RowContent header, List<SliceContent> subItems) {
         Trace.beginSection("KeyguardSliceView#showSlice");
         mHasHeader = header != null;
@@ -171,15 +158,8 @@ public class KeyguardSliceView extends LinearLayout {
         layoutParams.gravity = Gravity.START;
         mRow.setLayoutParams(layoutParams);
 
-        int rowIndex = 0, colIndex = 0;
-        LinearLayout subRow = null;
-        for (SliceContent sc : subItems.subList(startIndex, subItems.size())) {
-            subRow = (LinearLayout) mRow.getChildAt(rowIndex);
-            if (subRow == null) {
-                subRow = createSubRow();
-                mRow.addView(subRow, rowIndex);
-            }
-            RowContent rc = (RowContent) sc;
+        for (int i = startIndex; i < subItemsCount; i++) {
+            RowContent rc = (RowContent) subItems.get(i);
             SliceItem item = rc.getSliceItem();
             final Uri itemTag = item.getSlice().getUri();
             // Try to reuse the view if already exists in the layout
@@ -188,16 +168,9 @@ public class KeyguardSliceView extends LinearLayout {
                 button = new KeyguardSliceTextView(mContext);
                 button.setTextColor(blendedColor);
                 button.setTag(itemTag);
-                subRow.addView(button, colIndex);
-            } else {
-                LinearLayout buttonParent = (LinearLayout) button.getParent();
-                if (mRow.indexOfChild(buttonParent) != rowIndex
-                        || buttonParent.indexOfChild(button) != colIndex) {
-                    buttonParent.removeView(button);
-                    subRow.addView(button, colIndex);
-                }
+                final int viewIndex = i - (mHasHeader ? 1 : 0);
+                mRow.addView(button, viewIndex);
             }
-            colIndex++;
 
             PendingIntent pendingIntent = null;
             if (rc.getPrimaryAction() != null) {
@@ -229,31 +202,13 @@ public class KeyguardSliceView extends LinearLayout {
             button.setCompoundDrawablesRelative(iconDrawable, null, null, null);
             button.setOnClickListener(mOnClickListener);
             button.setClickable(pendingIntent != null);
-
-            if (rc.hasBottomDivider()) {
-                rowIndex++;
-                colIndex = 0;
-            } else {
-                LinearLayout.LayoutParams lp =
-                        (LinearLayout.LayoutParams) button.getLayoutParams();
-                lp.setMarginEnd(mContext.getResources().getDimensionPixelSize(
-                        R.dimen.widget_horizontal_padding));
-                button.setLayoutParams(lp);
-            }
         }
 
         // Removing old views
         for (int i = 0; i < mRow.getChildCount(); i++) {
-            subRow = (LinearLayout) mRow.getChildAt(i);
-            for (int j = 0; j < subRow.getChildCount(); j++) {
-                View child = subRow.getChildAt(j);
-                if (!clickActions.containsKey(child)) {
-                    subRow.removeView(child);
-                    j--;
-                }
-            }
-            if (subRow.getChildCount() == 0) {
-                mRow.removeView(subRow);
+            View child = mRow.getChildAt(i);
+            if (!clickActions.containsKey(child)) {
+                mRow.removeView(child);
                 i--;
             }
         }
@@ -275,7 +230,13 @@ public class KeyguardSliceView extends LinearLayout {
     private void updateTextColors() {
         final int blendedColor = getTextColor();
         mTitle.setTextColor(blendedColor);
-        mRow.performOnChildren(tv -> tv.setTextColor(blendedColor));
+        int childCount = mRow.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View v = mRow.getChildAt(i);
+            if (v instanceof TextView) {
+                ((TextView) v).setTextColor(blendedColor);
+            }
+        }
     }
 
     /**
@@ -301,13 +262,22 @@ public class KeyguardSliceView extends LinearLayout {
         mIconSize = mContext.getResources().getDimensionPixelSize(R.dimen.widget_icon_size);
         mIconSizeWithHeader = (int) mContext.getResources().getDimension(R.dimen.header_icon_size);
 
-        mRow.performOnChildren(tv -> tv.onDensityOrFontScaleChanged());
+        for (int i = 0; i < mRow.getChildCount(); i++) {
+            View child = mRow.getChildAt(i);
+            if (child instanceof KeyguardSliceTextView) {
+                ((KeyguardSliceTextView) child).onDensityOrFontScaleChanged();
+            }
+        }
     }
 
     void onOverlayChanged() {
-        mRow.performOnChildren(tv -> tv.onOverlayChanged());
+        for (int i = 0; i < mRow.getChildCount(); i++) {
+            View child = mRow.getChildAt(i);
+            if (child instanceof KeyguardSliceTextView) {
+                ((KeyguardSliceTextView) child).onOverlayChanged();
+            }
+        }
     }
-
     public void dump(PrintWriter pw, String[] args) {
         pw.println("KeyguardSliceView:");
         pw.println("  mTitle: " + (mTitle == null ? "null" : mTitle.getVisibility() == VISIBLE));
@@ -324,6 +294,8 @@ public class KeyguardSliceView extends LinearLayout {
     }
 
     public static class Row extends LinearLayout {
+        private Set<KeyguardSliceTextView> mKeyguardSliceTextViewSet = new HashSet();
+
         /**
          * This view is visible in AOD, which means that the device will sleep if we
          * don't hold a wake lock. We want to enter doze only after all views have reached
@@ -392,8 +364,14 @@ public class KeyguardSliceView extends LinearLayout {
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             int width = MeasureSpec.getSize(widthMeasureSpec);
+            int childCount = getChildCount();
 
-            performOnChildren(tv -> tv.setMaxWidth(Integer.MAX_VALUE));
+            for (int i = 0; i < childCount; i++) {
+                View child = getChildAt(i);
+                if (child instanceof KeyguardSliceTextView) {
+                    ((KeyguardSliceTextView) child).setMaxWidth(Integer.MAX_VALUE);
+                }
+            }
 
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         }
@@ -418,15 +396,20 @@ public class KeyguardSliceView extends LinearLayout {
             return false;
         }
 
-        public void performOnChildren(Consumer<KeyguardSliceTextView> action) {
-            for (int i = 0; i < getChildCount(); i++) {
-                LinearLayout subRow = (LinearLayout) getChildAt(i);
-                for (int j = 0; j < subRow.getChildCount(); j++) {
-                    View child = subRow.getChildAt(j);
-                    if (child instanceof KeyguardSliceTextView) {
-                        action.accept((KeyguardSliceTextView) child);
-                    }
-                }
+        @Override
+        public void addView(View view, int index) {
+            super.addView(view, index);
+
+            if (view instanceof KeyguardSliceTextView) {
+                mKeyguardSliceTextViewSet.add((KeyguardSliceTextView) view);
+            }
+        }
+
+        @Override
+        public void removeView(View view) {
+            super.removeView(view);
+            if (view instanceof KeyguardSliceTextView) {
+                mKeyguardSliceTextViewSet.remove((KeyguardSliceTextView) view);
             }
         }
     }

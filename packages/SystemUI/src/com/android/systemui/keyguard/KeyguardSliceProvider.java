@@ -222,7 +222,7 @@ public class KeyguardSliceProvider extends SliceProvider implements
                 if (needsMediaLocked()) {
                     addMediaLocked(builder);
                 } else {
-                    addDateLocked(builder);
+                    builder.addRow(new RowBuilder(mDateUri).setTitle(mLastText));
                 }
                 addNextAlarmLocked(builder);
                 addZenModeLocked(builder);
@@ -235,10 +235,6 @@ public class KeyguardSliceProvider extends SliceProvider implements
             Trace.endSection();
         }
         return slice;
-    }
-
-    protected void addDateLocked(ListBuilder builder) {
-        builder.setHeader(new ListBuilder.HeaderBuilder(mDateUri).setTitle(mLastText));
     }
 
     protected boolean needsMediaLocked() {
@@ -267,7 +263,6 @@ public class KeyguardSliceProvider extends SliceProvider implements
             if (mediaIconCompat != null) {
                 albumBuilder.addEndItem(mediaIconCompat, ListBuilder.ICON_IMAGE);
             }
-            albumBuilder.setEndOfSection(true);
 
             listBuilder.addRow(albumBuilder);
         }
@@ -293,8 +288,7 @@ public class KeyguardSliceProvider extends SliceProvider implements
                 R.drawable.ic_access_alarms_big);
         RowBuilder alarmRowBuilder = new RowBuilder(mAlarmUri)
                 .setTitle(mNextAlarm)
-                .addEndItem(alarmIcon, ListBuilder.ICON_IMAGE)
-                .setEndOfSection(true);
+                .addEndItem(alarmIcon, ListBuilder.ICON_IMAGE);
         builder.addRow(alarmRowBuilder);
     }
 
@@ -311,8 +305,7 @@ public class KeyguardSliceProvider extends SliceProvider implements
                         .getString(R.string.accessibility_quick_settings_dnd))
                 .addEndItem(
                     IconCompat.createWithResource(getContext(), R.drawable.stat_sys_dnd),
-                    ListBuilder.ICON_IMAGE)
-                .setEndOfSection(true);
+                    ListBuilder.ICON_IMAGE);
         builder.addRow(dndBuilder);
     }
 
