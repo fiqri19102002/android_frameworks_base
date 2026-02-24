@@ -129,13 +129,11 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
     private final KeyguardStateController mKeyguardStateController;
     private final PanelExpansionInteractor mPanelExpansionInteractor;
     private MultiSourceMinAlphaController mEndSideAlphaController;
-    private MultiSourceMinAlphaController mNetworkTrafficAlphaController;
     private LinearLayout mEndSideContent;
     private View mClockView;
     private View mPrimaryOngoingActivityChip;
     private View mSecondaryOngoingActivityChip;
     private View mNotificationIconAreaInner;
-    private View mNetworkTrafficHolder;
     // Visibilities come in from external system callers via disable flags, but we also sometimes
     // modify the visibilities internally. We need to store both so that we don't accidentally
     // propagate our internally modified flags for too long.
@@ -392,9 +390,6 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
         mStatusBarIconController.addIconGroup(mDarkIconManager);
         mEndSideContent = mStatusBar.findViewById(R.id.status_bar_end_side_content);
         mEndSideAlphaController = new MultiSourceMinAlphaController(mEndSideContent);
-        mNetworkTrafficHolder = mStatusBar.findViewById(R.id.network_traffic_holder);
-        mNetworkTrafficAlphaController =
-                new MultiSourceMinAlphaController(mNetworkTrafficHolder);
         mClockView = mStatusBar.findViewById(R.id.clock);
         mPrimaryOngoingActivityChip = mStatusBar.findViewById(R.id.ongoing_activity_chip_primary);
         mSecondaryOngoingActivityChip =
@@ -818,12 +813,9 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
         StatusBarRootModernization.assertInLegacyMode();
         if (!animate || !mAnimationsEnabled) {
             mEndSideAlphaController.setAlpha(/*alpha*/ 0f, SOURCE_OTHER);
-            mNetworkTrafficAlphaController.setAlpha(/*alpha*/ 0f, SOURCE_OTHER);
         } else {
             mEndSideAlphaController.animateToAlpha(/*alpha*/ 0f, SOURCE_OTHER, FADE_OUT_DURATION,
                     InterpolatorsAndroidX.ALPHA_OUT, /*startDelay*/ 0);
-            mNetworkTrafficAlphaController.animateToAlpha(/*alpha*/ 0f, SOURCE_OTHER,
-                    FADE_OUT_DURATION, InterpolatorsAndroidX.ALPHA_OUT, /*startDelay*/ 0);
         }
     }
 
@@ -831,7 +823,6 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
         StatusBarRootModernization.assertInLegacyMode();
         if (!animate || !mAnimationsEnabled) {
             mEndSideAlphaController.setAlpha(1f, SOURCE_OTHER);
-            mNetworkTrafficAlphaController.setAlpha(1f, SOURCE_OTHER);
             return;
         }
         if (mKeyguardStateController.isKeyguardFadingAway()) {
@@ -839,15 +830,9 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
                     mKeyguardStateController.getKeyguardFadingAwayDuration(),
                     InterpolatorsAndroidX.LINEAR_OUT_SLOW_IN,
                     mKeyguardStateController.getKeyguardFadingAwayDelay());
-            mNetworkTrafficAlphaController.animateToAlpha(/*alpha*/ 1f, SOURCE_OTHER,
-                    mKeyguardStateController.getKeyguardFadingAwayDuration(),
-                    InterpolatorsAndroidX.LINEAR_OUT_SLOW_IN,
-                    mKeyguardStateController.getKeyguardFadingAwayDelay());
         } else {
             mEndSideAlphaController.animateToAlpha(/*alpha*/ 1f, SOURCE_OTHER, FADE_IN_DURATION,
                     InterpolatorsAndroidX.ALPHA_IN, FADE_IN_DELAY);
-            mNetworkTrafficAlphaController.animateToAlpha(/*alpha*/ 1f, SOURCE_OTHER,
-                    FADE_IN_DURATION, InterpolatorsAndroidX.ALPHA_IN, FADE_IN_DELAY);
         }
     }
 
@@ -1037,11 +1022,9 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
     private StatusBarSystemEventDefaultAnimator getSystemEventAnimator() {
         return new StatusBarSystemEventDefaultAnimator(getResources(), (alpha) -> {
             mEndSideAlphaController.setAlpha(alpha, SOURCE_SYSTEM_EVENT_ANIMATOR);
-            mNetworkTrafficAlphaController.setAlpha(alpha, SOURCE_SYSTEM_EVENT_ANIMATOR);
             return Unit.INSTANCE;
         }, (translationX) -> {
             mEndSideContent.setTranslationX(translationX);
-            mNetworkTrafficHolder.setTranslationX(translationX);
             return Unit.INSTANCE;
         }, /*isAnimationRunning*/ false);
     }

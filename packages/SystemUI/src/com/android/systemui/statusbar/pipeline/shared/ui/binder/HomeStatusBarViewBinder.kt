@@ -92,6 +92,7 @@ constructor(
         val systemInfoView = view.requireViewById<View>(R.id.status_bar_end_side_content)
         val clockView = view.requireViewById<View>(R.id.clock)
         val notificationIconsArea = view.requireViewById<View>(R.id.notificationIcons)
+        val networkTrafficView = view.requireViewById<View>(R.id.network_traffic_holder)
 
         // CollapsedStatusBarFragment doesn't need this
         if (StatusBarRootModernization.isEnabled) {
@@ -298,13 +299,16 @@ constructor(
                             // animating, then we can use the baseVis default animation
                             if (animState.isAnimatingChip()) {
                                 // Just apply the visibility of the view, but don't animate
+                                networkTrafficView.visibility = baseVis.visibility
                                 systemInfoView.visibility = baseVis.visibility
                                 // Now apply the animation state, with its animator
                                 when (animState) {
                                     AnimatingIn -> {
+                                        systemEventChipAnimateIn?.invoke(networkTrafficView)
                                         systemEventChipAnimateIn?.invoke(systemInfoView)
                                     }
                                     AnimatingOut -> {
+                                        systemEventChipAnimateOut?.invoke(networkTrafficView)
                                         systemEventChipAnimateOut?.invoke(systemInfoView)
                                     }
                                     else -> {
@@ -312,6 +316,7 @@ constructor(
                                     }
                                 }
                             } else {
+                                networkTrafficView.adjustVisibility(baseVis)
                                 systemInfoView.adjustVisibility(baseVis)
                             }
                         }
