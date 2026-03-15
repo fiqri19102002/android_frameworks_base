@@ -70,6 +70,7 @@ import com.android.systemui.statusbar.StatusBarState;
 import com.android.systemui.statusbar.StatusBarStateControllerImpl;
 import com.android.systemui.statusbar.notification.AssistantFeedbackController;
 import com.android.systemui.statusbar.notification.NotificationActivityStarter;
+import com.android.systemui.statusbar.notification.collection.BundleEntryAdapter;
 import com.android.systemui.statusbar.notification.collection.provider.HighPriorityProvider;
 import com.android.systemui.statusbar.notification.collection.render.NotifGutsViewListener;
 import com.android.systemui.statusbar.notification.collection.render.NotifGutsViewManager;
@@ -880,7 +881,11 @@ public class NotificationGutsManager implements NotifGutsViewManager, CoreStarta
     }
 
     boolean affectedByWorkProfileLock(ExpandableNotificationRow row) {
-        int userId = row.getEntry().getSbn().getNormalizedUserId();
+        if (NotificationBundleUi.isEnabled()
+                && row.getEntryAdapter() instanceof BundleEntryAdapter) {
+            return false;
+        }
+        int userId = row.getEntryAdapter().getSbn().getNormalizedUserId();
         return mUserManager.isManagedProfile(userId)
                 && mLockscreenUserManager.isLockscreenPublicMode(userId);
     }
