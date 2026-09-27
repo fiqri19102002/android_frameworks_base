@@ -243,7 +243,15 @@ public class NetworkTraffic extends TextView {
                     case UNITS_KILOBYTES:
                     case UNITS_AUTOBYTES:
                         if (kbps < 8000 || mUnits == UNITS_KILOBYTES) {
-                            value = String.format("%.0f", (float) kbps / 8);
+                            final String format;
+                            if (kbps < 80) {
+                                format = "%.2f";
+                            } else if (kbps < 800) {
+                                format = "%.1f";
+                            } else {
+                                format = "%.0f";
+                            }
+                            value = String.format(format, (float) kbps / 8);
                             unitid = R.string.kilobytespersecond_short;
                             break;
                         }
