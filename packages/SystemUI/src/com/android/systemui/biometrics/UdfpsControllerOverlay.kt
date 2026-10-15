@@ -339,7 +339,9 @@ constructor(
         }
         udfpsOverlayInteractor.stopHandlingTouches()
         udfpsDisplayModeProvider.disable(null)
-        udfpsHelper?.removeDimLayer()
+        if (wasShowing) {
+            udfpsHelper?.removeDimLayer()
+        }
         getTouchOverlay()?.apply {
             if (this.parent != null) {
                 if (Build.IS_DEBUGGABLE) {
